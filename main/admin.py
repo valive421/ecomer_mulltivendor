@@ -7,3 +7,6 @@ from .models import Vendor, Product_category, Product
 admin.site.register(Vendor)
 admin.site.register(Product)
 admin.site.register(Product_category)
+admin.site.register(models.Customer)
+admin.site.register(models.Order)
+admin.site.register(models.OrderItem)
