@@ -1,7 +1,7 @@
 from django.shortcuts import render
 from . import serializers
 from . import models
-from rest_framework import generics , permissions
+from rest_framework import generics , permissions,viewsets
 # Create your views here.
 class VendorList(generics.ListCreateAPIView):
     queryset = models.Vendor.objects.all()
@@ -43,3 +43,14 @@ class OrderDetail(generics.RetrieveUpdateDestroyAPIView):
         order = models.Order.objects.get(id=order_id)
         order_items = models.OrderItem.objects.filter(order=order)
         return order_items
+    
+class CustomerAddressViewSet(viewsets.ModelViewSet):
+    queryset = models.CustomerAddress.objects.all()
+    serializer_class = serializers.CustomerAddressSerializer
+    #permission_classes = [permissions.IsAuthenticated]
+    
+   
+class ProductRatingViewSet(viewsets.ModelViewSet):
+    queryset = models.ProductRating.objects.all()
+    serializer_class = serializers.ProductRatingSerializer
+    #permission_classes = [permissions.IsAuthenticated]
