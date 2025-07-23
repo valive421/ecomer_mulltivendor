@@ -15,7 +15,18 @@ class VendorDetail(generics.RetrieveUpdateDestroyAPIView):
 class ProductList(generics.ListCreateAPIView):
     queryset = models.Product.objects.all()
     serializer_class = serializers.ProductListSerializer
-    
+
+    def get_queryset(self):
+      qs = super().get_queryset()
+      category_id = self.request.GET.get('category')
+      print(category_id)
+      if category_id:
+        try:
+            category = models.Product_category.objects.get(id=category_id)
+            return qs.filter(category=category)
+        except models.Product_category.DoesNotExist:
+            return qs.none()
+      return qs
 class ProductDetail(generics.RetrieveUpdateDestroyAPIView):
     queryset = models.Product.objects.all()
     serializer_class = serializers.ProductDetailSerializer
