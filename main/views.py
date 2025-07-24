@@ -7,7 +7,9 @@ from django.views.decorators.csrf import csrf_exempt
 from django.contrib.auth import authenticate
 from django.contrib.auth.models import User
 from django.contrib.auth.hashers import make_password
-
+from django.contrib.auth.models import User
+from django.db import IntegrityError
+ 
 # Create your views here.
 class VendorList(generics.ListCreateAPIView):
     queryset = models.Vendor.objects.all()
@@ -36,6 +38,52 @@ class ProductList(generics.ListCreateAPIView):
 class ProductDetail(generics.RetrieveUpdateDestroyAPIView):
     queryset = models.Product.objects.all()
     serializer_class = serializers.ProductDetailSerializer
+
+@csrf_exempt
+def CustomerRegister(request):
+    first_name=request.POST.get('first_name')
+    last_name=request.POST.get('last_name')
+    username=request.POST.get('username')
+    email=request.POST.get('email')
+    mobile=request.POST.get('mobile')
+    password=request.POST.get('password')
+    try:
+        user=User.objects.create(
+            first_name=first_name,
+            last_name=last_name,
+            username=username,
+            email=email,
+            password=password,
+        )
+        if user:
+            try:
+                #Create Customer
+                customer=models.Customer.objects.create(
+                    user=user,
+                    mobile=mobile
+                )
+                msg={
+                    'bool':True,
+                    'user':user.id,
+                    'customer':customer.id,
+                    'msg':'Successful registration. Procees to Login'
+                }
+            except IntegrityError:
+                msg={
+                    'bool':False,
+                    'user':'Phone No. already exists!!'
+                }
+        else:
+            msg={
+                'bool':False,
+                'user':'Something went wrong'
+            }
+    except IntegrityError:
+            msg={
+                'bool':False,
+                'user':'Username already exists!!'
+            }
+    return JsonResponse(msg)
 
 @csrf_exempt
 def CustomerLogin(request):
