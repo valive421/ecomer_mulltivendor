@@ -2,6 +2,12 @@ from django.shortcuts import render
 from . import serializers
 from . import models
 from rest_framework import generics , permissions,viewsets
+from django.http import JsonResponse
+from django.views.decorators.csrf import csrf_exempt
+from django.contrib.auth import authenticate
+from django.contrib.auth.models import User
+from django.contrib.auth.hashers import make_password
+
 # Create your views here.
 class VendorList(generics.ListCreateAPIView):
     queryset = models.Vendor.objects.all()
@@ -30,6 +36,25 @@ class ProductList(generics.ListCreateAPIView):
 class ProductDetail(generics.RetrieveUpdateDestroyAPIView):
     queryset = models.Product.objects.all()
     serializer_class = serializers.ProductDetailSerializer
+
+@csrf_exempt
+def CustomerLogin(request):
+    username=request.POST.get('username')
+    password=request.POST.get('password')
+    user=authenticate(username=username,password=password)
+    if user:
+        customer=models.Customer.objects.get(user=user)
+        msg={
+            'bool':True,
+            'user':user.username,            
+            'id':customer.id,
+        }
+    else:
+        msg={
+            'bool':False,
+            'user':'Invalid Login Credentials'
+        }
+    return JsonResponse(msg)
     
 class CustomerList(generics.ListCreateAPIView):
     queryset = models.Customer.objects.all()

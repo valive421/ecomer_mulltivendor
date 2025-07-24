@@ -21,6 +21,9 @@ urlpatterns = [
 #orders
  path('orders/',views.OrderList.as_view()),
  path('order/<int:pk>/',views.OrderDetail.as_view()),
+
+    #customer login
+    path('customer/login/', views.CustomerLogin, name='customer_login'),
  
 ]
 urlpatterns += router.urls
