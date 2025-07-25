@@ -1,7 +1,8 @@
 from django.shortcuts import render
 from . import serializers
 from . import models
-from rest_framework import generics , permissions,viewsets
+from rest_framework import generics
+from rest_framework import permissions,viewsets
 from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
 from django.contrib.auth import authenticate
@@ -118,6 +119,12 @@ class OrderList(generics.ListCreateAPIView):
     serializer_class = serializers.OrderSerializer
     #permission_classes = [permissions.IsAuthenticated]
 
+    def create(self, request, *args, **kwargs):
+        print("Order POST data (raw):", request.data)
+        response = super().create(request, *args, **kwargs)
+        print("Order create response status:", response.status_code)
+        print("Order create response data:", getattr(response, 'data', None))
+        return response
 
 class OrderDetail(generics.RetrieveUpdateDestroyAPIView):
     #queryset = models.OrderItem.objects.all()
@@ -127,6 +134,10 @@ class OrderDetail(generics.RetrieveUpdateDestroyAPIView):
         order = models.Order.objects.get(id=order_id)
         order_items = models.OrderItem.objects.filter(order=order)
         return order_items
+    
+class OrderItemCreate(generics.CreateAPIView):
+    queryset = models.OrderItem.objects.all()
+    serializer_class = serializers.OrderDetailSerializer
     
 class CustomerAddressViewSet(viewsets.ModelViewSet):
     queryset = models.CustomerAddress.objects.all()

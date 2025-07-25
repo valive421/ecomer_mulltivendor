@@ -21,7 +21,8 @@ urlpatterns = [
 #orders
  path('orders/',views.OrderList.as_view()),
  path('order/<int:pk>/',views.OrderDetail.as_view()),
-
+# Add this endpoint for creating order items:
+ path('orderitem/', views.OrderItemCreate.as_view()),
 #customer login
 path('customer/login/', views.CustomerLogin, name='customer_login'),
 path('customer/register/', views.CustomerRegister, name='customer_register'),

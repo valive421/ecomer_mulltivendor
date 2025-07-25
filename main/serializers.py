@@ -59,17 +59,24 @@ class CustomerDetailSerializer(serializers.ModelSerializer):
         self.Meta.depth = 1
 
 class OrderSerializer(serializers.ModelSerializer):
+    customer = serializers.PrimaryKeyRelatedField(queryset=models.Customer.objects.all())
     class Meta:
         model = models.Order
         fields = ['id','customer', 'ordertime']
+
+    def create(self, validated_data):
+        print("OrderSerializer validated_data:", validated_data)
+        return super().create(validated_data)
     def __init__(self, *args, **kwargs):
         super(OrderSerializer, self).__init__(*args, **kwargs)
         self.Meta.depth = 1
 
 class OrderDetailSerializer(serializers.ModelSerializer):
+    order = serializers.PrimaryKeyRelatedField(queryset=models.Order.objects.all())
+    product = serializers.PrimaryKeyRelatedField(queryset=models.Product.objects.all())
     class Meta:
         model = models.OrderItem
-        fields = ['id', 'order', 'product']
+        fields = ['id', 'order', 'product', 'qty', 'price']
     def __init__(self, *args, **kwargs):
         super(OrderDetailSerializer, self).__init__(*args, **kwargs)
         self.Meta.depth = 1
