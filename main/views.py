@@ -126,14 +126,12 @@ class OrderList(generics.ListCreateAPIView):
         print("Order create response data:", getattr(response, 'data', None))
         return response
 
-class OrderDetail(generics.RetrieveUpdateDestroyAPIView):
-    #queryset = models.OrderItem.objects.all()
+class OrderDetail(generics.ListAPIView):
     serializer_class = serializers.OrderDetailSerializer
+
     def get_queryset(self):
         order_id = self.kwargs['pk']
-        order = models.Order.objects.get(id=order_id)
-        order_items = models.OrderItem.objects.filter(order=order)
-        return order_items
+        return models.OrderItem.objects.filter(order_id=order_id)
     
 class OrderItemCreate(generics.CreateAPIView):
     queryset = models.OrderItem.objects.all()
