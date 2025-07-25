@@ -10,7 +10,12 @@ from django.contrib.auth.models import User
 from django.contrib.auth.hashers import make_password
 from django.contrib.auth.models import User
 from django.db import IntegrityError
- 
+from django.utils.decorators import method_decorator
+from django.views.decorators.http import require_http_methods
+from django.views.decorators.csrf import ensure_csrf_cookie
+from django.views.decorators.csrf import csrf_protect
+from django.views.decorators.csrf import csrf_exempt
+
 # Create your views here.
 class VendorList(generics.ListCreateAPIView):
     queryset = models.Vendor.objects.all()
@@ -156,3 +161,20 @@ class CategoryList(generics.ListCreateAPIView):
 class CategoryDetail(generics.RetrieveUpdateDestroyAPIView):
     queryset = models.Product_category.objects.all()
     serializer_class = serializers.CategoryDetailSerializer
+
+@csrf_exempt  # Add this decorator to disable CSRF for this view (for testing only)
+def order_status(request, order_id):
+    if request.method == 'PATCH':
+        import json
+        try:
+            data = json.loads(request.body.decode('utf-8'))
+        except Exception:
+            data = {}
+        status = data.get('status')
+        updated = models.Order.objects.filter(id=order_id).update(order_status=status)
+        msg = {'bool': False}
+        if updated:
+            msg = {'bool': True}
+        return JsonResponse(msg)
+    else:
+        return JsonResponse({'detail': 'Method not allowed'}, status=405)

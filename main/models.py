@@ -35,6 +35,7 @@ class Customer(models.Model):
 class Order(models.Model):
     customer = models.ForeignKey(Customer, on_delete=models.CASCADE)
     ordertime = models.DateTimeField(auto_now_add=True)
+    order_status = models.CharField(max_length=20, default='Pending')  # e.g., Pending, Completed, Cancelled
     def __unicode__(self):
         return '%s' % self.ordertime
 

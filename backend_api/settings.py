@@ -145,4 +145,14 @@ REST_FRAMEWORK = {
 CORS_ALLOWED_ORIGINS = [
     'http://localhost:3000',
 ]
-CORS_ALLOW_ALL_ORIGINS = True
+CORS_ALLOW_ALL_ORIGINS = False  # Should be False if you use CORS_ALLOWED_ORIGINS
+
+CORS_ALLOWED_ORIGINS = [
+    "http://localhost:3000",
+]
+CSRF_TRUSTED_ORIGINS = [
+    "http://localhost:3000",
+]
+
+# Allow frontend to send credentials (cookies) for CSRF
+CORS_ALLOW_CREDENTIALS = True

@@ -26,6 +26,6 @@ urlpatterns = [
 #customer login
 path('customer/login/', views.CustomerLogin, name='customer_login'),
 path('customer/register/', views.CustomerRegister, name='customer_register'),
- 
+  path('order-status/<int:order_id>/',views.order_status, name='order_status'),
 ]
 urlpatterns += router.urls
