@@ -28,7 +28,7 @@ class VendorDetail(generics.RetrieveUpdateDestroyAPIView):
     serializer_class = serializers.VendorDetailSerializer
     
 class ProductList(generics.ListCreateAPIView):
-    queryset = models.Product.objects.all()
+    queryset = models.Product.objects.all().order_by('-listing_time')
     serializer_class = serializers.ProductListSerializer
 
     def get_queryset(self):

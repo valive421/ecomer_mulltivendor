@@ -9,6 +9,11 @@ class VendorSerializer(serializers.ModelSerializer):
         super(VendorSerializer, self).__init__(*args, **kwargs)
         self.Meta.depth = 1
 
+class UserSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = models.User
+        fields = ['id', 'username', 'email', 'first_name', 'last_name']
+
 class VendorDetailSerializer(serializers.ModelSerializer):
     class Meta:
         model = models.Vendor
@@ -21,11 +26,24 @@ class ProductimgSerializer(serializers.ModelSerializer):
         model = models.ProductImage
         fields = ['id', 'product', 'image']
 
+class profilePictureSerializer(serializers.ModelSerializer):
+    image = serializers.SerializerMethodField()
+
+    class Meta:
+        model = models.ProfilePicture
+        fields = ['id', 'customer', 'image']
+
+    def get_image(self, obj):
+        request = self.context.get('request', None)
+        if request is not None:
+            return request.build_absolute_uri(obj.image.url)
+        return obj.image.url
+
 class ProductListSerializer(serializers.ModelSerializer):
     product_images = ProductimgSerializer(many=True, read_only=True)
     class Meta:
         model = models.Product
-        fields = ['id', 'category', 'vendor', 'title', 'detail', 'price', 'product_images', 'sells']
+        fields = ['id', 'category', 'vendor', 'title', 'detail', 'price', 'product_images', 'sells', 'listing_time']
     def __init__(self, *args, **kwargs):
         super(ProductListSerializer, self).__init__(*args, **kwargs)
         self.Meta.depth = 1
@@ -37,7 +55,7 @@ class ProductDetailSerializer(serializers.ModelSerializer):
     product_images = ProductimgSerializer(many=True, read_only=True)
     class Meta:
         model = models.Product
-        fields = ['id', 'category', 'vendor', 'title', 'detail', 'price', 'product_ratings', 'product_images', 'sells']
+        fields = ['id', 'category', 'vendor', 'title', 'detail', 'price', 'product_ratings', 'product_images', 'sells', 'listing_time']
     def __init__(self, *args, **kwargs):
         super(ProductDetailSerializer, self).__init__(*args, **kwargs)
         self.Meta.depth = 1
@@ -51,12 +69,23 @@ class CustomerSerializer(serializers.ModelSerializer):
         self.Meta.depth = 1
 
 class CustomerDetailSerializer(serializers.ModelSerializer):
+    profilepic = serializers.SerializerMethodField()
+
     class Meta:
         model = models.Customer
-        fields = ['id', 'user', 'mobile']
-    def __init__(self, *args, **kwargs):
-        super(CustomerDetailSerializer, self).__init__(*args, **kwargs)
-        self.Meta.depth = 1
+        fields = ['id', 'user', 'mobile', 'profilepic']
+
+    def get_profilepic(self, instance):
+        # Use the correct related_name if set, otherwise fallback to ProfilePicture.objects.filter
+        from .models import ProfilePicture
+        pics = ProfilePicture.objects.filter(customer=instance)
+        return profilePictureSerializer(pics, many=True, context=self.context).data
+
+    def to_representation(self, instance):
+        representation = super().to_representation(instance)
+        representation['user'] = UserSerializer(instance.user).data
+        representation['mobile'] = instance.mobile
+        return representation
 
 class OrderSerializer(serializers.ModelSerializer):
     customer = serializers.PrimaryKeyRelatedField(queryset=models.Customer.objects.all())

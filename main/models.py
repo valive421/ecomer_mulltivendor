@@ -1,5 +1,6 @@
 from django.db import models
 from django.contrib.auth.models import User
+from django.utils import timezone
 
 #vendor model
 class Vendor(models.Model):
@@ -23,13 +24,13 @@ class Product(models.Model):
     detail = models.TextField(null=True)
     price = models.FloatField()
     sells = models.PositiveIntegerField(default=0)
+    listing_time = models.DateTimeField(auto_now_add=True)
     def __str__(self):
         return self.title
     
 class Customer(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE)
     mobile = models.PositiveBigIntegerField(unique=True)
-
     def __str__(self):
         return self.user.username
     
@@ -71,4 +72,11 @@ class ProductImage(models.Model):
     image = models.ImageField(upload_to='product_images/')
     def __str__(self):
         return self.image.url
+
+class ProfilePicture(models.Model):
+    customer = models.ForeignKey(Customer, on_delete=models.CASCADE, related_name='profile_pictures')
+    image = models.ImageField(upload_to='profile_pictures/')
+    def __str__(self):
+        return self.image.url
+
 
