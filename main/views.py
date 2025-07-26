@@ -16,6 +16,9 @@ from django.views.decorators.csrf import ensure_csrf_cookie
 from django.views.decorators.csrf import csrf_protect
 from django.views.decorators.csrf import csrf_exempt
 import json
+from rest_framework.parsers import MultiPartParser, FormParser
+from rest_framework.response import Response
+from rest_framework import status
 
 # Create your views here.
 class VendorList(generics.ListCreateAPIView):
@@ -125,6 +128,38 @@ class CustomerList(generics.ListCreateAPIView):
 class CustomerDetail(generics.RetrieveUpdateDestroyAPIView):
     queryset = models.Customer.objects.all()
     serializer_class = serializers.CustomerDetailSerializer
+    parser_classes = [MultiPartParser, FormParser]
+
+    def update(self, request, *args, **kwargs):
+        partial = kwargs.pop('partial', False)
+        instance = self.get_object()
+        data = request.data.copy()
+
+        # Update user fields if present
+        user = instance.user
+        user_changed = False
+        for field in ['first_name', 'last_name', 'email', 'username']:
+            if field in data:
+                setattr(user, field, data[field])
+                user_changed = True
+        if user_changed:
+            user.save()
+
+        # Update customer fields
+        if 'mobile' in data:
+            instance.mobile = data['mobile']
+            instance.save()
+
+        # Handle profile picture upload (replace old with new)
+        if 'image' in data and data['image']:
+            from .models import ProfilePicture
+            # Delete all old profile pictures for this customer
+            ProfilePicture.objects.filter(customer=instance).delete()
+            # Add the new one
+            ProfilePicture.objects.create(customer=instance, image=data['image'])
+
+        serializer = self.get_serializer(instance)
+        return Response(serializer.data, status=status.HTTP_200_OK)
 
 class OrderList(generics.ListCreateAPIView):
     queryset = models.Order.objects.all()
