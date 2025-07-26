@@ -15,6 +15,7 @@ from django.views.decorators.http import require_http_methods
 from django.views.decorators.csrf import ensure_csrf_cookie
 from django.views.decorators.csrf import csrf_protect
 from django.views.decorators.csrf import csrf_exempt
+import json
 
 # Create your views here.
 class VendorList(generics.ListCreateAPIView):
@@ -165,7 +166,6 @@ class CategoryDetail(generics.RetrieveUpdateDestroyAPIView):
 @csrf_exempt  # Add this decorator to disable CSRF for this view (for testing only)
 def order_status(request, order_id):
     if request.method == 'PATCH':
-        import json
         try:
             data = json.loads(request.body.decode('utf-8'))
         except Exception:

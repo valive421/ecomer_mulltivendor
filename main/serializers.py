@@ -62,7 +62,7 @@ class OrderSerializer(serializers.ModelSerializer):
     customer = serializers.PrimaryKeyRelatedField(queryset=models.Customer.objects.all())
     class Meta:
         model = models.Order
-        fields = ['id','customer', 'ordertime']
+        fields = ['id','customer', 'ordertime', 'order_status']
 
     def create(self, validated_data):
         print("OrderSerializer validated_data:", validated_data)
