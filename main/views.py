@@ -1,3 +1,4 @@
+import profile
 from django.shortcuts import render
 from . import serializers
 from . import models
@@ -19,8 +20,79 @@ import json
 from rest_framework.parsers import MultiPartParser, FormParser
 from rest_framework.response import Response
 from rest_framework import status
+from rest_framework import filters
 
 # Create your views here.
+@csrf_exempt
+def vendorRegister(request):
+    first_name=request.POST.get('first_name')
+    last_name=request.POST.get('last_name')
+    username=request.POST.get('username')
+    email=request.POST.get('email')
+    mobile=request.POST.get('mobile')
+    password=request.POST.get('password')
+    address=request.POST.get('address')
+    profile_pic=request.FILES.get('profile_pic')
+    try:
+        user=User.objects.create(
+            first_name=first_name,
+            last_name=last_name,
+            username=username,
+            email=email,
+            password=password,
+        )
+        if user:
+            try:
+                #Create Vendor
+                vendor=models.Vendor.objects.create(
+                    user=user,
+                    mobile=mobile,
+                    address=address,
+                    ProfilePicture=profile_pic
+                )
+                msg={
+                    'bool':True,
+                    'user':user.id,
+                    'vendor':vendor.id,
+                    'msg':'Successful registration. Procees to Login'
+                }
+            except IntegrityError:
+                msg={
+                    'bool':False,
+                    'user':'Phone No. already exists!!'
+                }
+        else:
+            msg={
+                'bool':False,
+                'user':'Something went wrong'
+            }
+    except IntegrityError:
+            msg={
+                'bool':False,
+                'user':'Username already exists!!'
+            }
+    return JsonResponse(msg)
+
+@csrf_exempt
+def VendorLogin(request):
+    username=request.POST.get('username')
+    password=request.POST.get('password')
+    user=authenticate(username=username,password=password)
+    if user:
+        vendor=models.Vendor.objects.get(user=user)
+        msg={
+            'bool':True,
+            'user':user.username,            
+            'id':vendor.id,
+        }
+        print(msg)
+    else:
+        msg={
+            'bool':False,
+            'user':'Invalid Login Credentials'
+        }
+    return JsonResponse(msg)
+
 class VendorList(generics.ListCreateAPIView):
     queryset = models.Vendor.objects.all()
     serializer_class = serializers.VendorSerializer
@@ -119,6 +191,28 @@ def CustomerLogin(request):
             'user':'Invalid Login Credentials'
         }
     return JsonResponse(msg)
+
+def CustomerDashboard(request, pk):
+    customer_id = int(pk)
+    # Debug: print all orders for this customer
+    print(list(models.Order.objects.filter(customer_id=customer_id).values()))
+    print("test \n")
+    # Check if customer exists
+    if not models.Customer.objects.filter(id=customer_id).exists():
+        return JsonResponse({'error': 'Customer not found', 'total_orders': 0, 'total_address': 0})
+
+    # Check if any orders exist for this customer
+    orders = models.Order.objects.filter(customer_id=customer_id)
+    print("Order count for customer", customer_id, ":", orders.count())
+    print("Order objects:", list(orders.values()))
+
+    total_orders = orders.count()
+    total_address = models.CustomerAddress.objects.filter(customer_id=customer_id).count()
+    msg = {
+        'total_orders': total_orders,
+        'total_address': total_address
+    }
+    return JsonResponse(msg)
     
 class CustomerList(generics.ListCreateAPIView):
     queryset = models.Customer.objects.all()
@@ -188,7 +282,13 @@ class CustomerAddressViewSet(viewsets.ModelViewSet):
     queryset = models.CustomerAddress.objects.all()
     serializer_class = serializers.CustomerAddressSerializer
     #permission_classes = [permissions.IsAuthenticated]
-    
+
+    def get_queryset(self):
+        queryset = super().get_queryset()
+        customer_id = self.request.query_params.get('customer')
+        if customer_id:
+            queryset = queryset.filter(customer_id=customer_id)
+        return queryset
    
 class ProductRatingViewSet(viewsets.ModelViewSet):
     queryset = models.ProductRating.objects.all()

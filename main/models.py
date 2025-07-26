@@ -6,6 +6,8 @@ from django.utils import timezone
 class Vendor(models.Model):
     user=models.ForeignKey(User,on_delete=models.CASCADE)
     address = models.TextField(null=True)
+    mobile = models.PositiveBigIntegerField(unique=True,null=True, blank=True)
+    ProfilePicture = models.ImageField(upload_to='vendor_profile_pictures/', null=True, blank=True)
     def __str__(self):
         return self.user.username
     
@@ -50,7 +52,7 @@ class OrderItem(models.Model):
         return self.product.title
     
 class CustomerAddress(models.Model):
-    customer = models.ForeignKey(Customer, on_delete=models.CASCADE,related_name='customer_addresses')
+    customer = models.ForeignKey('Customer', on_delete=models.CASCADE, related_name='customer_addresses', null=False, blank=False)
     address = models.TextField(null=True)
     default_address = models.BooleanField(default=False)
 

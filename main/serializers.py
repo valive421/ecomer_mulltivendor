@@ -2,9 +2,12 @@ from rest_framework import serializers
 from . import models
 
 class VendorSerializer(serializers.ModelSerializer):
+    mobile = serializers.IntegerField(read_only=True)
+    profile_pic = serializers.ImageField(source='ProfilePicture', read_only=True)
+
     class Meta:
         model = models.Vendor
-        fields = ['user', 'address']
+        fields = ['user', 'address', 'mobile', 'profile_pic', 'id']
     def __init__(self, *args, **kwargs):
         super(VendorSerializer, self).__init__(*args, **kwargs)
         self.Meta.depth = 1
@@ -15,12 +18,16 @@ class UserSerializer(serializers.ModelSerializer):
         fields = ['id', 'username', 'email', 'first_name', 'last_name']
 
 class VendorDetailSerializer(serializers.ModelSerializer):
+    mobile = serializers.IntegerField(read_only=True)
+    profile_pic = serializers.ImageField(source='ProfilePicture', read_only=True)
+
     class Meta:
         model = models.Vendor
-        fields = ['user', 'address']
+        fields = ['user', 'address', 'mobile', 'profile_pic','id']
     def __init__(self, *args, **kwargs):
         super(VendorDetailSerializer, self).__init__(*args, **kwargs)
         self.Meta.depth = 1
+
 class ProductimgSerializer(serializers.ModelSerializer):
     class Meta:
         model = models.ProductImage
@@ -121,6 +128,7 @@ class OrderDetailSerializer(serializers.ModelSerializer):
         return order_item
 
 class CustomerAddressSerializer(serializers.ModelSerializer):
+    customer = serializers.PrimaryKeyRelatedField(queryset=models.Customer.objects.all())
     class Meta:
         model = models.CustomerAddress
         fields = ['id', 'customer', 'address', 'default_address']

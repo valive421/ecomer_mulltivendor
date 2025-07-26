@@ -1,6 +1,7 @@
 from django.urls import path
 from . import views
 from rest_framework.routers import DefaultRouter
+# The following line enables /api/address/ for GET (all), POST (create), and /api/address/<id>/ for GET, PATCH, DELETE
 router = DefaultRouter()
 router.register(r'address', views.CustomerAddressViewSet, basename='customer_addresses')
 router.register(r'product_ratings', views.ProductRatingViewSet, basename='product_ratings')
@@ -27,5 +28,10 @@ urlpatterns = [
 path('customer/login/', views.CustomerLogin, name='customer_login'),
 path('customer/register/', views.CustomerRegister, name='customer_register'),
   path('order-status/<int:order_id>/',views.order_status, name='order_status'),
+
+path('customer-dashboard/<int:pk>/', views.CustomerDashboard, name='customer_dashboard'),
+  # Remove the direct ViewSet mapping; use router for ViewSets
+  path('vendor/login/', views.VendorLogin, name='vendor_login'),
+path('vendor/register/', views.vendorRegister, name='vendor_register'),
 ]
 urlpatterns += router.urls
