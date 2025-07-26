@@ -25,7 +25,7 @@ class ProductListSerializer(serializers.ModelSerializer):
     product_images = ProductimgSerializer(many=True, read_only=True)
     class Meta:
         model = models.Product
-        fields = ['id', 'category', 'vendor', 'title', 'detail', 'price', 'product_images']
+        fields = ['id', 'category', 'vendor', 'title', 'detail', 'price', 'product_images', 'sells']
     def __init__(self, *args, **kwargs):
         super(ProductListSerializer, self).__init__(*args, **kwargs)
         self.Meta.depth = 1
@@ -37,7 +37,7 @@ class ProductDetailSerializer(serializers.ModelSerializer):
     product_images = ProductimgSerializer(many=True, read_only=True)
     class Meta:
         model = models.Product
-        fields = ['id', 'category', 'vendor', 'title', 'detail', 'price', 'product_ratings', 'product_images']
+        fields = ['id', 'category', 'vendor', 'title', 'detail', 'price', 'product_ratings', 'product_images', 'sells']
     def __init__(self, *args, **kwargs):
         super(ProductDetailSerializer, self).__init__(*args, **kwargs)
         self.Meta.depth = 1
@@ -80,6 +80,16 @@ class OrderDetailSerializer(serializers.ModelSerializer):
     def __init__(self, *args, **kwargs):
         super(OrderDetailSerializer, self).__init__(*args, **kwargs)
         self.Meta.depth = 1
+
+    def create(self, validated_data):
+        order_item = super().create(validated_data)
+        # Increase the product's sells field by qty
+        product = order_item.product
+        qty = order_item.qty
+        if hasattr(product, 'sells'):
+            product.sells = (product.sells or 0) + qty
+            product.save(update_fields=['sells'])
+        return order_item
 
 class CustomerAddressSerializer(serializers.ModelSerializer):
     class Meta:

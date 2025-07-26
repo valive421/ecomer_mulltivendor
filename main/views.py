@@ -32,16 +32,22 @@ class ProductList(generics.ListCreateAPIView):
     serializer_class = serializers.ProductListSerializer
 
     def get_queryset(self):
-      qs = super().get_queryset()
-      category_id = self.request.GET.get('category')
-      print(category_id)
-      if category_id:
-        try:
-            category = models.Product_category.objects.get(id=category_id)
-            return qs.filter(category=category)
-        except models.Product_category.DoesNotExist:
-            return qs.none()
-      return qs
+        qs = super().get_queryset()
+        category_id = self.request.GET.get('category')
+        product_id = self.request.GET.get('id')  # <-- Fix: use 'id' to match your query param
+        print(f"category_id: {category_id}, product_id: {product_id}")
+        if product_id:
+            try:
+                return qs.filter(id=product_id)
+            except ValueError:
+                return qs.none()
+        if category_id:
+            try:
+                category = models.Product_category.objects.get(id=category_id)
+                return qs.filter(category=category)
+            except models.Product_category.DoesNotExist:
+                return qs.none()
+        return qs
 class ProductDetail(generics.RetrieveUpdateDestroyAPIView):
     queryset = models.Product.objects.all()
     serializer_class = serializers.ProductDetailSerializer
