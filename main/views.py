@@ -367,13 +367,18 @@ def customer_addresses(request, customer_id):
 @api_view(['GET'])
 def vendor_orderitems(request, vendor_id):
     """
-    Returns all order items for a given vendor, with product and order details.
+    Returns all order items for a given vendor, with product and order details,
+    and includes customer id for each order item.
     """
-    qs = models.OrderItem.objects.filter(product__vendor_id=vendor_id).select_related('product', 'order')
+    qs = models.OrderItem.objects.filter(product__vendor_id=vendor_id).select_related('product', 'order', 'order__customer')
     paginator = PageNumberPagination()
     paginated_qs = paginator.paginate_queryset(qs, request)
     results = []
     for item in paginated_qs:
+        # Add customer id if available
+        customer_id = None
+        if hasattr(item.order, 'customer') and item.order.customer:
+            customer_id = item.order.customer.id
         results.append({
             "id": item.id,
             "qty": item.qty,
@@ -383,12 +388,13 @@ def vendor_orderitems(request, vendor_id):
                 "title": item.product.title,
                 "price": item.product.price,
                 "image": item.product.product_images.first().image.url if item.product.product_images.exists() else "",
-                "usd_price": getattr(item.product, "usd_price", None),  # if you have usd_price field
+                "usd_price": getattr(item.product, "usd_price", None),
             },
             "order": {
                 "id": item.order.id,
                 "order_status": item.order.order_status,
-            }
+            },
+            "customer_id": customer_id
         })
     return paginator.get_paginated_response(results)
 
