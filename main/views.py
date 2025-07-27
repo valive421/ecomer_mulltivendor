@@ -105,27 +105,101 @@ class VendorDetail(generics.RetrieveUpdateDestroyAPIView):
 class ProductList(generics.ListCreateAPIView):
     queryset = models.Product.objects.all().order_by('-listing_time')
     serializer_class = serializers.ProductListSerializer
+    parser_classes = [MultiPartParser, FormParser]
 
     def get_queryset(self):
         qs = super().get_queryset()
         category_id = self.request.GET.get('category')
-        product_id = self.request.GET.get('id')  # <-- Fix: use 'id' to match your query param
-        print(f"category_id: {category_id}, product_id: {product_id}")
+        product_id = self.request.GET.get('id')
+        vendor_id = self.request.GET.get('vendor')  # Support vendor filter
+        print(f"category_id: {category_id}, product_id: {product_id}, vendor_id: {vendor_id}")
         if product_id:
             try:
                 return qs.filter(id=product_id)
             except ValueError:
                 return qs.none()
+        if vendor_id:
+            try:
+                return qs.filter(vendor_id=vendor_id)
+            except ValueError:
+                return qs.none()
+        if category_id:
+            try:
+                return qs.filter(category_id=category_id)
+            except ValueError:
+                return qs.none()
+        return qs
+
+    def perform_create(self, serializer):
+        category_id = self.request.data.get('category')
+        vendor_id = self.request.data.get('vendor')
+        category = None
+        vendor = None
         if category_id:
             try:
                 category = models.Product_category.objects.get(id=category_id)
-                return qs.filter(category=category)
             except models.Product_category.DoesNotExist:
-                return qs.none()
-        return qs
+                pass
+        if vendor_id:
+            try:
+                vendor = models.Vendor.objects.get(id=vendor_id)
+            except models.Vendor.DoesNotExist:
+                pass
+        product = serializer.save(category=category, vendor=vendor)
+        # Handle multiple images
+        images = self.request.FILES.getlist('images')
+        if not images:
+            # Fallback to single 'image' field for backward compatibility
+            image = self.request.FILES.get('image')
+            if image:
+                models.ProductImage.objects.create(product=product, image=image)
+        else:
+            for img in images:
+                models.ProductImage.objects.create(product=product, image=img)
+
 class ProductDetail(generics.RetrieveUpdateDestroyAPIView):
     queryset = models.Product.objects.all()
     serializer_class = serializers.ProductDetailSerializer
+    parser_classes = [MultiPartParser, FormParser]
+
+    def update(self, request, *args, **kwargs):
+        partial = kwargs.pop('partial', False)
+        instance = self.get_object()
+        data = request.data.copy()
+        images = request.FILES.getlist('images')
+        image = request.FILES.get('image')
+
+        # Update fields
+        for field in ['title', 'detail', 'price']:
+            if field in data:
+                setattr(instance, field, data[field])
+        # Update category and vendor if provided
+        if 'category' in data:
+            try:
+                from .models import Product_category
+                instance.category = Product_category.objects.get(id=data['category'])
+            except Exception:
+                pass
+        if 'vendor' in data:
+            try:
+                from .models import Vendor
+                instance.vendor = Vendor.objects.get(id=data['vendor'])
+            except Exception:
+                pass
+        instance.save()
+
+        from .models import ProductImage
+        # If new images are provided, delete all old images and add new ones
+        if images or image:
+            ProductImage.objects.filter(product=instance).delete()
+            if images:
+                for img in images:
+                    ProductImage.objects.create(product=instance, image=img)
+            elif image:
+                ProductImage.objects.create(product=instance, image=image)
+
+        serializer = self.get_serializer(instance)
+        return Response(serializer.data, status=status.HTTP_200_OK)
 
 @csrf_exempt
 def CustomerRegister(request):
