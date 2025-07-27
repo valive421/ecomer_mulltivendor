@@ -55,8 +55,75 @@ class ProductListSerializer(serializers.ModelSerializer):
         super(ProductListSerializer, self).__init__(*args, **kwargs)
         self.Meta.depth = 1
 
+    def create(self, validated_data):
+        request = self.context.get('request')
+        category_id = request.data.get('category') if request else None
+        vendor_id = request.data.get('vendor') if request else None
+        category = None
+        vendor = None
+        if category_id:
+            try:
+                category = models.Product_category.objects.get(id=category_id)
+            except models.Product_category.DoesNotExist:
+                pass
+        if vendor_id:
+            try:
+                vendor = models.Vendor.objects.get(id=vendor_id)
+            except models.Vendor.DoesNotExist:
+                pass
+        product = models.Product.objects.create(
+            category=category,
+            vendor=vendor,
+            title=validated_data.get('title'),
+            detail=validated_data.get('detail'),
+            price=validated_data.get('price'),
+        )
+        # Handle multiple images
+        if request:
+            images = request.FILES.getlist('images')
+            if not images:
+                image = request.FILES.get('image')
+                if image:
+                    models.ProductImage.objects.create(product=product, image=image)
+            else:
+                for img in images:
+                    models.ProductImage.objects.create(product=product, image=img)
+        return product
 
-        
+    def update(self, instance, validated_data):
+        request = self.context.get('request')
+        # Update fields
+        for field in ['title', 'detail', 'price']:
+            if field in validated_data:
+                setattr(instance, field, validated_data[field])
+        # Update category and vendor if provided
+        if request:
+            category_id = request.data.get('category')
+            vendor_id = request.data.get('vendor')
+            if category_id:
+                try:
+                    instance.category = models.Product_category.objects.get(id=category_id)
+                except Exception:
+                    pass
+            if vendor_id:
+                try:
+                    instance.vendor = models.Vendor.objects.get(id=vendor_id)
+                except Exception:
+                    pass
+        instance.save()
+        # Handle images
+        if request:
+            images = request.FILES.getlist('images')
+            image = request.FILES.get('image')
+            if images or image:
+                models.ProductImage.objects.filter(product=instance).delete()
+                if images:
+                    for img in images:
+                        models.ProductImage.objects.create(product=instance, image=img)
+                elif image:
+                    models.ProductImage.objects.create(product=instance, image=image)
+        return instance
+
 class ProductDetailSerializer(serializers.ModelSerializer):
     product_ratings = serializers.StringRelatedField(many=True, read_only=True)
     product_images = ProductimgSerializer(many=True, read_only=True)
@@ -66,6 +133,40 @@ class ProductDetailSerializer(serializers.ModelSerializer):
     def __init__(self, *args, **kwargs):
         super(ProductDetailSerializer, self).__init__(*args, **kwargs)
         self.Meta.depth = 1
+
+    def update(self, instance, validated_data):
+        request = self.context.get('request')
+        # Update fields
+        for field in ['title', 'detail', 'price']:
+            if field in validated_data:
+                setattr(instance, field, validated_data[field])
+        # Update category and vendor if provided
+        if request:
+            category_id = request.data.get('category')
+            vendor_id = request.data.get('vendor')
+            if category_id:
+                try:
+                    instance.category = models.Product_category.objects.get(id=category_id)
+                except Exception:
+                    pass
+            if vendor_id:
+                try:
+                    instance.vendor = models.Vendor.objects.get(id=vendor_id)
+                except Exception:
+                    pass
+        instance.save()
+        # Handle images
+        if request:
+            images = request.FILES.getlist('images')
+            image = request.FILES.get('image')
+            if images or image:
+                models.ProductImage.objects.filter(product=instance).delete()
+                if images:
+                    for img in images:
+                        models.ProductImage.objects.create(product=instance, image=img)
+                elif image:
+                    models.ProductImage.objects.create(product=instance, image=image)
+        return instance
 
 class CustomerSerializer(serializers.ModelSerializer):
     class Meta:

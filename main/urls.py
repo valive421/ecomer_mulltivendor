@@ -33,5 +33,6 @@ path('customer-dashboard/<int:pk>/', views.CustomerDashboard, name='customer_das
   # Remove the direct ViewSet mapping; use router for ViewSets
   path('vendor/login/', views.VendorLogin, name='vendor_login'),
 path('vendor/register/', views.vendorRegister, name='vendor_register'),
+ path('product-image/<int:image_id>/', views.ProductImageDelete, name='product_image_delete'),
 ]
 urlpatterns += router.urls
