@@ -21,6 +21,10 @@ from rest_framework.parsers import MultiPartParser, FormParser
 from rest_framework.response import Response
 from rest_framework import status
 from rest_framework import filters
+from .serializers import CustomerAddressSerializer
+from django.views.decorators.http import require_GET
+from rest_framework.decorators import api_view
+from rest_framework.pagination import PageNumberPagination
 
 # Create your views here.
 @csrf_exempt
@@ -340,3 +344,114 @@ def ProductImageDelete(request, image_id):
         return JsonResponse({}, status=204)
     except ProductImage.DoesNotExist:
         return JsonResponse({'detail': 'Not found'}, status=404)
+    
+class vendororderList(generics.ListAPIView):
+    serializer_class = serializers.OrderDetailSerializer
+    queryset = models.OrderItem.objects.all()
+
+    def get_queryset(self):
+        qs = super().get_queryset()
+        vendor_id = self.kwargs['pk']
+        return qs.filter(product__vendor_id=vendor_id)
+
+@csrf_exempt
+@require_GET
+def customer_addresses(request, customer_id):
+    """
+    Returns all addresses for a given customer.
+    """
+    addresses = models.CustomerAddress.objects.filter(customer_id=customer_id)
+    serializer = CustomerAddressSerializer(addresses, many=True)
+    return JsonResponse(serializer.data, safe=False)
+
+@api_view(['GET'])
+def vendor_orderitems(request, vendor_id):
+    """
+    Returns all order items for a given vendor, with product and order details.
+    """
+    qs = models.OrderItem.objects.filter(product__vendor_id=vendor_id).select_related('product', 'order')
+    paginator = PageNumberPagination()
+    paginated_qs = paginator.paginate_queryset(qs, request)
+    results = []
+    for item in paginated_qs:
+        results.append({
+            "id": item.id,
+            "qty": item.qty,
+            "price": item.price,
+            "product": {
+                "id": item.product.id,
+                "title": item.product.title,
+                "price": item.product.price,
+                "image": item.product.product_images.first().image.url if item.product.product_images.exists() else "",
+                "usd_price": getattr(item.product, "usd_price", None),  # if you have usd_price field
+            },
+            "order": {
+                "id": item.order.id,
+                "order_status": item.order.order_status,
+            }
+        })
+    return paginator.get_paginated_response(results)
+
+@api_view(['GET'])
+def vendor_customers(request, vendor_id):
+    """
+    Returns all unique customers who have ordered products from this vendor.
+    """
+    # Debug: print vendor_id and type
+    # Get all order items for this vendor
+    orderitems = models.OrderItem.objects.filter(product__vendor_id=vendor_id).select_related('order', 'order__customer', 'order__customer__user')
+
+    customer_ids = set()
+    customers = []
+    for item in orderitems:
+        order = getattr(item, 'order', None)
+        if not order or not hasattr(order, 'customer') or not order.customer:
+            continue
+        customer = order.customer
+        if not hasattr(customer, 'user') or not customer.user:
+            continue
+        if customer.id not in customer_ids:
+            customer_ids.add(customer.id)
+            customers.append({
+                "customer": {
+                    "id": customer.id,
+                    "mobile": customer.mobile
+                },
+                "user": {
+                    "id": customer.user.id,
+                    "username": customer.user.username,
+                    "email": customer.user.email,
+                    "first_name": customer.user.first_name,
+                    "last_name": customer.user.last_name
+                }
+            })
+    return JsonResponse({"results": customers})
+
+@api_view(['GET'])
+def vendor_customer_orders(request, vendor_id, customer_id):
+    """
+    Returns all order items for a given vendor and customer.
+    """
+    # Get all order items for this vendor and customer
+    orderitems = models.OrderItem.objects.filter(
+        product__vendor_id=vendor_id,
+        order__customer_id=customer_id
+    ).select_related('product', 'order')
+    results = []
+    for item in orderitems:
+        results.append({
+            "id": item.id,
+            "qty": item.qty,
+            "price": item.price,
+            "product": {
+                "id": item.product.id,
+                "title": item.product.title,
+                "price": item.product.price,
+                "image": item.product.product_images.first().image.url if item.product.product_images.exists() else "",
+            },
+            "order": {
+                "id": item.order.id,
+                "order_status": item.order.order_status,
+            }
+        })
+    return JsonResponse({"results": results})

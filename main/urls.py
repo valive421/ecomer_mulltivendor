@@ -34,5 +34,10 @@ path('customer-dashboard/<int:pk>/', views.CustomerDashboard, name='customer_das
   path('vendor/login/', views.VendorLogin, name='vendor_login'),
 path('vendor/register/', views.vendorRegister, name='vendor_register'),
  path('product-image/<int:image_id>/', views.ProductImageDelete, name='product_image_delete'),
+ path('vendor-order/<int:pk>/', views.vendororderList.as_view(), name='vendor_order_list'),
+ path('customer-addresses/<int:customer_id>/', views.customer_addresses, name='customer_addresses'),
+ path('vendor/<int:vendor_id>/orderitems', views.vendor_orderitems, name='vendor_orderitems'),
+ path('vendor/<int:vendor_id>/customers/', views.vendor_customers, name='vendor_customers'),
+ path('vendor/<int:vendor_id>/customer/<int:customer_id>/orders/', views.vendor_customer_orders, name='vendor_customer_orders'),
 ]
 urlpatterns += router.urls
