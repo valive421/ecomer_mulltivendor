@@ -30,7 +30,7 @@ from .models import Product, ProductRating, Customer
 
 from django.views.decorators.csrf import csrf_exempt
 
-# Create your views here.
+# Vendor registration endpoint
 @csrf_exempt
 def vendorRegister(request):
     first_name=request.POST.get('first_name')
@@ -81,6 +81,7 @@ def vendorRegister(request):
             }
     return JsonResponse(msg)
 
+# Vendor login endpoint
 @csrf_exempt
 def VendorLogin(request):
     username=request.POST.get('username')
@@ -101,15 +102,18 @@ def VendorLogin(request):
         }
     return JsonResponse(msg)
 
+# List and create vendors
 class VendorList(generics.ListCreateAPIView):
     queryset = models.Vendor.objects.all()
     serializer_class = serializers.VendorSerializer
     #permission_classes = [permissions.IsAuthenticated]
 
+# Retrieve, update, or delete a vendor
 class VendorDetail(generics.RetrieveUpdateDestroyAPIView):
     queryset = models.Vendor.objects.all()
     serializer_class = serializers.VendorDetailSerializer
     
+# List and create products, supports filtering by category, id, or vendor
 class ProductList(generics.ListCreateAPIView):
     queryset = models.Product.objects.all().order_by('-listing_time')
     serializer_class = serializers.ProductListSerializer
@@ -138,11 +142,13 @@ class ProductList(generics.ListCreateAPIView):
                 return qs.none()
         return qs
 
+# Retrieve, update, or delete a product
 class ProductDetail(generics.RetrieveUpdateDestroyAPIView):
     queryset = models.Product.objects.all()
     serializer_class = serializers.ProductDetailSerializer
     parser_classes = [MultiPartParser, FormParser]
 
+# Customer registration endpoint
 @csrf_exempt
 def CustomerRegister(request):
     first_name=request.POST.get('first_name')
@@ -189,6 +195,7 @@ def CustomerRegister(request):
             }
     return JsonResponse(msg)
 
+# Customer login endpoint
 @csrf_exempt
 def CustomerLogin(request):
     username=request.POST.get('username')
@@ -208,6 +215,7 @@ def CustomerLogin(request):
         }
     return JsonResponse(msg)
 
+# Customer dashboard view, returns order and address counts
 def CustomerDashboard(request, pk):
     customer_id = int(pk)
     # Debug: print all orders for this customer
@@ -230,11 +238,13 @@ def CustomerDashboard(request, pk):
     }
     return JsonResponse(msg)
     
+# List and create customers
 class CustomerList(generics.ListCreateAPIView):
     queryset = models.Customer.objects.all()
     serializer_class = serializers.CustomerSerializer
     #permission_classes = [permissions.IsAuthenticated]
 
+# Retrieve, update, or delete a customer, supports profile picture update
 class CustomerDetail(generics.RetrieveUpdateDestroyAPIView):
     queryset = models.Customer.objects.all()
     serializer_class = serializers.CustomerDetailSerializer
@@ -271,6 +281,7 @@ class CustomerDetail(generics.RetrieveUpdateDestroyAPIView):
         serializer = self.get_serializer(instance)
         return Response(serializer.data, status=status.HTTP_200_OK)
 
+# List and create orders
 class OrderList(generics.ListCreateAPIView):
     queryset = models.Order.objects.all()
     serializer_class = serializers.OrderSerializer
@@ -283,6 +294,7 @@ class OrderList(generics.ListCreateAPIView):
         print("Order create response data:", getattr(response, 'data', None))
         return response
 
+# List order items for a specific order
 class OrderDetail(generics.ListAPIView):
     serializer_class = serializers.OrderDetailSerializer
 
@@ -290,10 +302,12 @@ class OrderDetail(generics.ListAPIView):
         order_id = self.kwargs['pk']
         return models.OrderItem.objects.filter(order_id=order_id)
     
+# Create an order item
 class OrderItemCreate(generics.CreateAPIView):
     queryset = models.OrderItem.objects.all()
     serializer_class = serializers.OrderDetailSerializer
     
+# ViewSet for customer addresses
 class CustomerAddressViewSet(viewsets.ModelViewSet):
     queryset = models.CustomerAddress.objects.all()
     serializer_class = serializers.CustomerAddressSerializer
@@ -306,20 +320,24 @@ class CustomerAddressViewSet(viewsets.ModelViewSet):
             queryset = queryset.filter(customer_id=customer_id)
         return queryset
    
+# ViewSet for product ratings
 class ProductRatingViewSet(viewsets.ModelViewSet):
     queryset = models.ProductRating.objects.all()
     serializer_class = serializers.ProductRatingSerializer
     #permission_classes = [permissions.IsAuthenticated]
 
+# List and create product categories
 class CategoryList(generics.ListCreateAPIView):
     queryset = models.Product_category.objects.all()
     serializer_class = serializers.CategorySerializer
     #permission_classes = [permissions.IsAuthenticated]
 
+# Retrieve, update, or delete a product category
 class CategoryDetail(generics.RetrieveUpdateDestroyAPIView):
     queryset = models.Product_category.objects.all()
     serializer_class = serializers.CategoryDetailSerializer
 
+# Update order status (PATCH only)
 @csrf_exempt  # Add this decorator to disable CSRF for this view (for testing only)
 def order_status(request, order_id):
     if request.method == 'PATCH':
@@ -338,6 +356,7 @@ def order_status(request, order_id):
 
 from django.views.decorators.http import require_http_methods
 
+# Delete a product image by id
 @csrf_exempt
 @require_http_methods(["DELETE"])
 def ProductImageDelete(request, image_id):
@@ -349,6 +368,7 @@ def ProductImageDelete(request, image_id):
     except ProductImage.DoesNotExist:
         return JsonResponse({'detail': 'Not found'}, status=404)
     
+# List all order items for a vendor
 class vendororderList(generics.ListAPIView):
     serializer_class = serializers.OrderDetailSerializer
     queryset = models.OrderItem.objects.all()
@@ -358,6 +378,7 @@ class vendororderList(generics.ListAPIView):
         vendor_id = self.kwargs['pk']
         return qs.filter(product__vendor_id=vendor_id)
 
+# List all addresses for a customer
 @csrf_exempt
 @require_GET
 def customer_addresses(request, customer_id):
@@ -368,6 +389,7 @@ def customer_addresses(request, customer_id):
     serializer = CustomerAddressSerializer(addresses, many=True)
     return JsonResponse(serializer.data, safe=False)
 
+# List all order items for a vendor, paginated, with product and order details
 @api_view(['GET'])
 def vendor_orderitems(request, vendor_id):
     """
@@ -402,6 +424,7 @@ def vendor_orderitems(request, vendor_id):
         })
     return paginator.get_paginated_response(results)
 
+# List all unique customers who have ordered from a vendor
 @api_view(['GET'])
 def vendor_customers(request, vendor_id):
     """
@@ -437,6 +460,7 @@ def vendor_customers(request, vendor_id):
             })
     return JsonResponse({"results": customers})
 
+# List all order items for a vendor and a specific customer
 @api_view(['GET'])
 def vendor_customer_orders(request, vendor_id, customer_id):
     """
@@ -466,6 +490,7 @@ def vendor_customer_orders(request, vendor_id, customer_id):
         })
     return JsonResponse({"results": results})
 
+# Add a review and rating for a product
 @csrf_exempt
 @api_view(['POST'])
 def add_product_review(request, pk):
@@ -506,6 +531,7 @@ def add_product_review(request, pk):
     )
     return JsonResponse({"success": True})
 
+# Change password for a customer
 @csrf_exempt
 @api_view(['POST'])
 def customer_change_password(request):
@@ -530,6 +556,7 @@ def customer_change_password(request):
     except Customer.DoesNotExist:
         return JsonResponse({"success": False, "error": "Customer not found."}, status=404)
 
+# Change password for a vendor
 @csrf_exempt
 @api_view(['POST'])
 def vendor_change_password(request):

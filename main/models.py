@@ -2,7 +2,7 @@ from django.db import models
 from django.contrib.auth.models import User
 from django.utils import timezone
 
-#vendor model
+# Vendor model, links to User and stores vendor-specific info
 class Vendor(models.Model):
     user=models.ForeignKey(User,on_delete=models.CASCADE)
     address = models.TextField(null=True)
@@ -11,6 +11,7 @@ class Vendor(models.Model):
     def __str__(self):
         return self.user.username
     
+# Product category model
 class Product_category(models.Model):
     title = models.CharField(max_length=200)
     detail = models.TextField(null=True)
@@ -19,6 +20,7 @@ class Product_category(models.Model):
         return self.title
     
 
+# Product model, links to category and vendor
 class Product(models.Model):
     category = models.ForeignKey(Product_category,on_delete=models.SET_NULL,null=True,related_name='category_products')
     vendor = models.ForeignKey(Vendor,on_delete=models.SET_NULL,null=True)
@@ -30,12 +32,14 @@ class Product(models.Model):
     def __str__(self):
         return self.title
     
+# Customer model, links to User
 class Customer(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE)
     mobile = models.PositiveBigIntegerField(unique=True)
     def __str__(self):
         return self.user.username
     
+# Order model, links to Customer
 class Order(models.Model):
     customer = models.ForeignKey(Customer, on_delete=models.CASCADE)
     ordertime = models.DateTimeField(auto_now_add=True)
@@ -43,6 +47,7 @@ class Order(models.Model):
     def __unicode__(self):
         return '%s' % self.ordertime
 
+# OrderItem model, links to Order and Product
 class OrderItem(models.Model):
     order = models.ForeignKey(Order, on_delete=models.CASCADE,related_name='order_items')
     product = models.ForeignKey(Product, on_delete=models.CASCADE)
@@ -51,6 +56,7 @@ class OrderItem(models.Model):
     def __str__(self):
         return self.product.title
     
+# CustomerAddress model, links to Customer
 class CustomerAddress(models.Model):
     customer = models.ForeignKey('Customer', on_delete=models.CASCADE, related_name='customer_addresses', null=False, blank=False)
     address = models.TextField(null=True)
@@ -59,6 +65,7 @@ class CustomerAddress(models.Model):
     def __str__(self):
         return self.address
     
+# ProductRating model, links to Product and Customer
 class ProductRating(models.Model):
     product = models.ForeignKey(Product, on_delete=models.CASCADE, related_name='product_ratings')
     customer = models.ForeignKey(Customer, on_delete=models.CASCADE,related_name='customer_ratings')
@@ -69,12 +76,14 @@ class ProductRating(models.Model):
     def __str__(self):
         return f'{self.reviews}-{self.rating}'
     
+# ProductImage model, links to Product
 class ProductImage(models.Model):
     product = models.ForeignKey(Product, on_delete=models.CASCADE, related_name='product_images')
     image = models.ImageField(upload_to='product_images/')
     def __str__(self):
         return self.image.url
 
+# ProfilePicture model, links to Customer
 class ProfilePicture(models.Model):
     customer = models.ForeignKey(Customer, on_delete=models.CASCADE, related_name='profile_pictures')
     image = models.ImageField(upload_to='profile_pictures/')

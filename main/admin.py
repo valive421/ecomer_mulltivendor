@@ -1,16 +1,17 @@
 from django.contrib import admin
 from . import models
 
+# Register Vendor, Product, and Product_category models
 from django.contrib import admin
 from .models import Vendor, Product_category, Product
 
-admin.site.register(Vendor)
-admin.site.register(Product)
-admin.site.register(Product_category)
-admin.site.register(models.Customer)
-admin.site.register(models.Order)
-admin.site.register(models.OrderItem)
-admin.site.register(models.CustomerAddress)
-admin.site.register(models.ProductRating)
-admin.site.register(models.ProductImage)
-admin.site.register(models.ProfilePicture)
+admin.site.register(Vendor)  # Register Vendor model
+admin.site.register(Product)  # Register Product model
+admin.site.register(Product_category)  # Register Product_category model
+admin.site.register(models.Customer)  # Register Customer model
+admin.site.register(models.Order)  # Register Order model
+admin.site.register(models.OrderItem)  # Register OrderItem model
+admin.site.register(models.CustomerAddress)  # Register CustomerAddress model
+admin.site.register(models.ProductRating)  # Register ProductRating model
+admin.site.register(models.ProductImage)  # Register ProductImage model
+admin.site.register(models.ProfilePicture)  # Register ProfilePicture model

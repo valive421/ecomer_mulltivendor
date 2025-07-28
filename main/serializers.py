@@ -1,11 +1,13 @@
 from rest_framework import serializers
 from . import models
 
+# Serializer for User fields used in Vendor
 class VendorUserSerializer(serializers.ModelSerializer):
     class Meta:
         model = models.User
         fields = ['id', 'username', 'first_name', 'last_name', 'email']
 
+# Serializer for Vendor, includes user info and profile picture
 class VendorSerializer(serializers.ModelSerializer):
     user = VendorUserSerializer(read_only=True)
     mobile = serializers.IntegerField(read_only=True)
@@ -18,11 +20,13 @@ class VendorSerializer(serializers.ModelSerializer):
         super(VendorSerializer, self).__init__(*args, **kwargs)
         self.Meta.depth = 1
 
+# Serializer for User model
 class UserSerializer(serializers.ModelSerializer):
     class Meta:
         model = models.User
         fields = ['id', 'username', 'email', 'first_name', 'last_name']
 
+# Detailed serializer for Vendor
 class VendorDetailSerializer(serializers.ModelSerializer):
     user = VendorUserSerializer(read_only=True)
     mobile = serializers.IntegerField(read_only=True)
@@ -35,11 +39,13 @@ class VendorDetailSerializer(serializers.ModelSerializer):
         super(VendorDetailSerializer, self).__init__(*args, **kwargs)
         self.Meta.depth = 1
 
+# Serializer for ProductImage model
 class ProductimgSerializer(serializers.ModelSerializer):
     class Meta:
         model = models.ProductImage
         fields = ['id', 'product', 'image']
 
+# Serializer for Customer profile picture
 class profilePictureSerializer(serializers.ModelSerializer):
     image = serializers.SerializerMethodField()
 
@@ -53,6 +59,7 @@ class profilePictureSerializer(serializers.ModelSerializer):
             return request.build_absolute_uri(obj.image.url)
         return obj.image.url
 
+# Serializer for listing products, includes images and vendor info
 class ProductListSerializer(serializers.ModelSerializer):
     product_images = ProductimgSerializer(many=True, read_only=True)
     vendor = VendorSerializer(read_only=True)
@@ -134,6 +141,7 @@ class ProductListSerializer(serializers.ModelSerializer):
 
 
 
+# Serializer for detailed product info, includes ratings and images
 class ProductDetailSerializer(serializers.ModelSerializer):
     product_ratings = serializers.SerializerMethodField()
     product_images = ProductimgSerializer(many=True, read_only=True)
@@ -184,6 +192,7 @@ class ProductDetailSerializer(serializers.ModelSerializer):
                     models.ProductImage.objects.create(product=instance, image=image)
         return instance
 
+# Serializer for Customer model
 class CustomerSerializer(serializers.ModelSerializer):
     class Meta:
         model = models.Customer
@@ -192,6 +201,7 @@ class CustomerSerializer(serializers.ModelSerializer):
         super(CustomerSerializer, self).__init__(*args, **kwargs)
         self.Meta.depth = 1
 
+# Detailed serializer for Customer, includes profile pictures
 class CustomerDetailSerializer(serializers.ModelSerializer):
     profilepic = serializers.SerializerMethodField()
 
@@ -211,6 +221,7 @@ class CustomerDetailSerializer(serializers.ModelSerializer):
         representation['mobile'] = instance.mobile
         return representation
 
+# Serializer for Order model
 class OrderSerializer(serializers.ModelSerializer):
     customer = serializers.PrimaryKeyRelatedField(queryset=models.Customer.objects.all())
     class Meta:
@@ -224,6 +235,7 @@ class OrderSerializer(serializers.ModelSerializer):
         super(OrderSerializer, self).__init__(*args, **kwargs)
         self.Meta.depth = 1
 
+# Serializer for OrderItem model
 class OrderDetailSerializer(serializers.ModelSerializer):
     order = serializers.PrimaryKeyRelatedField(queryset=models.Order.objects.all())
     product = serializers.PrimaryKeyRelatedField(queryset=models.Product.objects.all())
@@ -244,6 +256,7 @@ class OrderDetailSerializer(serializers.ModelSerializer):
             product.save(update_fields=['sells'])
         return order_item
 
+# Serializer for CustomerAddress model
 class CustomerAddressSerializer(serializers.ModelSerializer):
     customer = serializers.PrimaryKeyRelatedField(queryset=models.Customer.objects.all())
     class Meta:
@@ -253,6 +266,7 @@ class CustomerAddressSerializer(serializers.ModelSerializer):
         super(CustomerAddressSerializer, self).__init__(*args, **kwargs)
         self.Meta.depth = 1
 
+# Serializer for ProductRating model
 class ProductRatingSerializer(serializers.ModelSerializer):
     class Meta:
         model = models.ProductRating
@@ -261,6 +275,7 @@ class ProductRatingSerializer(serializers.ModelSerializer):
         super(ProductRatingSerializer, self).__init__(*args, **kwargs)
         self.Meta.depth = 1
 
+# Serializer for Product_category model
 class CategorySerializer(serializers.ModelSerializer):
     class Meta:
         model = models.Product_category
@@ -269,6 +284,7 @@ class CategorySerializer(serializers.ModelSerializer):
         super(CategorySerializer, self).__init__(*args, **kwargs)
         self.Meta.depth = 1
 
+# Detailed serializer for Product_category
 class CategoryDetailSerializer(serializers.ModelSerializer):
     class Meta:
         model = models.Product_category
@@ -277,6 +293,7 @@ class CategoryDetailSerializer(serializers.ModelSerializer):
         super(CategoryDetailSerializer, self).__init__(*args, **kwargs)
         self.Meta.depth = 1
 
+# Serializer for ProductRating with nested customer info
 class ProductRatingWithCustomerSerializer(serializers.ModelSerializer):
     customer = CustomerDetailSerializer(read_only=True)
     class Meta:
