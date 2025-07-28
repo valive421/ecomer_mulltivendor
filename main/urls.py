@@ -13,6 +13,7 @@ urlpatterns = [
  #products
  path('products/',views.ProductList.as_view()),
  path('product/<int:pk>/',views.ProductDetail.as_view()),
+ path('product/<int:pk>/add_review/', views.add_product_review, name='add_product_review'),
  #product categories
  path('categories/',views.CategoryList.as_view()),
  path('category/<int:pk>/',views.CategoryDetail.as_view()),
@@ -39,5 +40,7 @@ path('vendor/register/', views.vendorRegister, name='vendor_register'),
  path('vendor/<int:vendor_id>/orderitems', views.vendor_orderitems, name='vendor_orderitems'),
  path('vendor/<int:vendor_id>/customers/', views.vendor_customers, name='vendor_customers'),
  path('vendor/<int:vendor_id>/customer/<int:customer_id>/orders/', views.vendor_customer_orders, name='vendor_customer_orders'),
+ path('customer/change-password/', views.customer_change_password, name='customer_change_password'),
+ path('vendor/change-password/', views.vendor_change_password, name='vendor_change_password'),
 ]
 urlpatterns += router.urls

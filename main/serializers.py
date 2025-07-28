@@ -1,7 +1,13 @@
 from rest_framework import serializers
 from . import models
 
+class VendorUserSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = models.User
+        fields = ['id', 'username', 'first_name', 'last_name', 'email']
+
 class VendorSerializer(serializers.ModelSerializer):
+    user = VendorUserSerializer(read_only=True)
     mobile = serializers.IntegerField(read_only=True)
     profile_pic = serializers.ImageField(source='ProfilePicture', read_only=True)
 
@@ -18,6 +24,7 @@ class UserSerializer(serializers.ModelSerializer):
         fields = ['id', 'username', 'email', 'first_name', 'last_name']
 
 class VendorDetailSerializer(serializers.ModelSerializer):
+    user = VendorUserSerializer(read_only=True)
     mobile = serializers.IntegerField(read_only=True)
     profile_pic = serializers.ImageField(source='ProfilePicture', read_only=True)
 
@@ -48,6 +55,7 @@ class profilePictureSerializer(serializers.ModelSerializer):
 
 class ProductListSerializer(serializers.ModelSerializer):
     product_images = ProductimgSerializer(many=True, read_only=True)
+    vendor = VendorSerializer(read_only=True)
     class Meta:
         model = models.Product
         fields = ['id', 'category', 'vendor', 'title', 'detail', 'price', 'product_images', 'sells', 'listing_time']
@@ -124,15 +132,23 @@ class ProductListSerializer(serializers.ModelSerializer):
                     models.ProductImage.objects.create(product=instance, image=image)
         return instance
 
+
+
 class ProductDetailSerializer(serializers.ModelSerializer):
-    product_ratings = serializers.StringRelatedField(many=True, read_only=True)
+    product_ratings = serializers.SerializerMethodField()
     product_images = ProductimgSerializer(many=True, read_only=True)
+    vendor = VendorSerializer(read_only=True)
     class Meta:
         model = models.Product
         fields = ['id', 'category', 'vendor', 'title', 'detail', 'price', 'product_ratings', 'product_images', 'sells', 'listing_time']
     def __init__(self, *args, **kwargs):
         super(ProductDetailSerializer, self).__init__(*args, **kwargs)
         self.Meta.depth = 1
+
+    def get_product_ratings(self, obj):
+        # Return all ratings with customer info (including profilepic)
+        ratings = models.ProductRating.objects.filter(product=obj).select_related('customer', 'customer__user')
+        return ProductRatingWithCustomerSerializer(ratings, many=True, context=self.context).data
 
     def update(self, instance, validated_data):
         request = self.context.get('request')
@@ -259,4 +275,13 @@ class CategoryDetailSerializer(serializers.ModelSerializer):
         fields = ['id', 'title', 'detail']
     def __init__(self, *args, **kwargs):
         super(CategoryDetailSerializer, self).__init__(*args, **kwargs)
+        self.Meta.depth = 1
+
+class ProductRatingWithCustomerSerializer(serializers.ModelSerializer):
+    customer = CustomerDetailSerializer(read_only=True)
+    class Meta:
+        model = models.ProductRating
+        fields = ['id', 'product', 'customer', 'rating', 'reviews', 'add_time']
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
         self.Meta.depth = 1

@@ -23,8 +23,12 @@ from rest_framework import status
 from rest_framework import filters
 from .serializers import CustomerAddressSerializer
 from django.views.decorators.http import require_GET
-from rest_framework.decorators import api_view
+from rest_framework.decorators import api_view, permission_classes
+from rest_framework.permissions import IsAuthenticated
 from rest_framework.pagination import PageNumberPagination
+from .models import Product, ProductRating, Customer
+
+from django.views.decorators.csrf import csrf_exempt
 
 # Create your views here.
 @csrf_exempt
@@ -461,3 +465,91 @@ def vendor_customer_orders(request, vendor_id, customer_id):
             }
         })
     return JsonResponse({"results": results})
+
+@csrf_exempt
+@api_view(['POST'])
+def add_product_review(request, pk):
+    """
+    Add a review and rating for a product.
+    Expects JSON: { "review": "text", "rating": 1-5 }
+    """
+    try:
+        product = Product.objects.get(pk=pk)
+    except Product.DoesNotExist:
+        return JsonResponse({"success": False, "error": "Product not found."}, status=404)
+
+    data = request.data if hasattr(request, "data") else json.loads(request.body.decode())
+    review_text = data.get("review", "").strip()
+    rating = int(data.get("rating", 0))
+
+    # You may want to get customer from request.user or session
+    # For demo, get customer from request (e.g., pass customer_id in POST)
+    customer_id = data.get("customer_id")
+    customer = None
+    if customer_id:
+        try:
+            customer = Customer.objects.get(pk=customer_id)
+        except Customer.DoesNotExist:
+            return JsonResponse({"success": False, "error": "Customer not found."}, status=404)
+    else:
+        # Optionally, require authentication and use request.user
+        return JsonResponse({"success": False, "error": "Customer ID required."}, status=400)
+
+    if not review_text or not (1 <= rating <= 5):
+        return JsonResponse({"success": False, "error": "Review and rating (1-5) required."}, status=400)
+
+    ProductRating.objects.create(
+        product=product,
+        customer=customer,
+        rating=rating,
+        reviews=review_text
+    )
+    return JsonResponse({"success": True})
+
+@csrf_exempt
+@api_view(['POST'])
+def customer_change_password(request):
+    """
+    Change password for a customer.
+    Expects JSON: { "customer_id": int, "old_password": str, "new_password": str }
+    """
+    data = request.data if hasattr(request, "data") else json.loads(request.body.decode())
+    customer_id = data.get("customer_id")
+    old_password = data.get("old_password")
+    new_password = data.get("new_password")
+    if not (customer_id and old_password and new_password):
+        return JsonResponse({"success": False, "error": "All fields required."}, status=400)
+    try:
+        customer = Customer.objects.get(pk=customer_id)
+        user = customer.user
+        if not user.check_password(old_password):
+            return JsonResponse({"success": False, "error": "Old password is incorrect."}, status=400)
+        user.set_password(new_password)
+        user.save()
+        return JsonResponse({"success": True})
+    except Customer.DoesNotExist:
+        return JsonResponse({"success": False, "error": "Customer not found."}, status=404)
+
+@csrf_exempt
+@api_view(['POST'])
+def vendor_change_password(request):
+    """
+    Change password for a vendor.
+    Expects JSON: { "vendor_id": int, "old_password": str, "new_password": str }
+    """
+    data = request.data if hasattr(request, "data") else json.loads(request.body.decode())
+    vendor_id = data.get("vendor_id")
+    old_password = data.get("old_password")
+    new_password = data.get("new_password")
+    if not (vendor_id and old_password and new_password):
+        return JsonResponse({"success": False, "error": "All fields required."}, status=400)
+    try:
+        vendor = models.Vendor.objects.get(pk=vendor_id)
+        user = vendor.user
+        if not user.check_password(old_password):
+            return JsonResponse({"success": False, "error": "Old password is incorrect."}, status=400)
+        user.set_password(new_password)
+        user.save()
+        return JsonResponse({"success": True})
+    except models.Vendor.DoesNotExist:
+        return JsonResponse({"success": False, "error": "Vendor not found."}, status=404)
