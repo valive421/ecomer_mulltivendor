@@ -27,6 +27,7 @@ from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.pagination import PageNumberPagination
 from .models import Product, ProductRating, Customer
+from django.db.models import Q
 
 from django.views.decorators.csrf import csrf_exempt
 
@@ -123,8 +124,9 @@ class ProductList(generics.ListCreateAPIView):
         qs = super().get_queryset()
         category_id = self.request.GET.get('category')
         product_id = self.request.GET.get('id')
-        vendor_id = self.request.GET.get('vendor')  # Support vendor filter
-        print(f"category_id: {category_id}, product_id: {product_id}, vendor_id: {vendor_id}")
+        vendor_id = self.request.GET.get('vendor')
+        search = self.request.GET.get('search')  # Add search support
+        print(f"category_id: {category_id}, product_id: {product_id}, vendor_id: {vendor_id}, search: {search}")
         if product_id:
             try:
                 return qs.filter(id=product_id)
@@ -132,14 +134,19 @@ class ProductList(generics.ListCreateAPIView):
                 return qs.none()
         if vendor_id:
             try:
-                return qs.filter(vendor_id=vendor_id)
+                qs = qs.filter(vendor_id=vendor_id)
             except ValueError:
                 return qs.none()
         if category_id:
             try:
-                return qs.filter(category_id=category_id)
+                qs = qs.filter(category_id=category_id)
             except ValueError:
                 return qs.none()
+        if search:
+            qs = qs.filter(
+                Q(title__icontains=search) | Q(detail__icontains=search) |
+                Q(title__istartswith=search) | Q(detail__istartswith=search)
+            )
         return qs
 
 # Retrieve, update, or delete a product
@@ -580,3 +587,21 @@ def vendor_change_password(request):
         return JsonResponse({"success": True})
     except models.Vendor.DoesNotExist:
         return JsonResponse({"success": False, "error": "Vendor not found."}, status=404)
+
+# Search products by query (title/detail contains or startswith)
+@api_view(['GET'])
+def search_products(request):
+    """
+    Returns products matching search query (contains or prefix).
+    Use ?q=searchterm
+    """
+    q = request.GET.get('q', '').strip()
+    results = []
+    if q:
+        products = Product.objects.filter(
+            Q(title__icontains=q) | Q(detail__icontains=q) |
+            Q(title__istartswith=q) | Q(detail__istartswith=q)
+        ).order_by('-listing_time')
+        serializer = serializers.ProductListSerializer(products, many=True, context={'request': request})
+        results = serializer.data
+    return JsonResponse({'results': results})

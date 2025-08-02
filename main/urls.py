@@ -56,6 +56,8 @@ urlpatterns = [
  # Change password endpoints
  path('customer/change-password/', views.customer_change_password, name='customer_change_password'),
  path('vendor/change-password/', views.vendor_change_password, name='vendor_change_password'),
+ # Search products endpoint
+ path('search/', views.search_products, name='search_products'),
 ]
 # Include router URLs for ViewSets
 urlpatterns += router.urls
