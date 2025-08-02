@@ -24,7 +24,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 SECRET_KEY = 'django-insecure-@+s8276^#e7330j&!=3djwsk(8l)fw4g(pvt^x2q=!%py#hqy='
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = False
 
 ALLOWED_HOSTS = []
 
@@ -156,3 +156,4 @@ CSRF_TRUSTED_ORIGINS = [
 
 # Allow frontend to send credentials (cookies) for CSRF
 CORS_ALLOW_CREDENTIALS = True
+ALLOWED_HOSTS = ['*']  # Allow all hosts for development; restrict in production

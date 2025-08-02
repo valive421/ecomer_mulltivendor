@@ -7,6 +7,7 @@ This Django REST Framework project provides a backend API for an e-commerce plat
 - **Vendor Management**: Register, login, update, and manage vendors.
 - **Customer Management**: Register, login, update, and manage customers.
 - **Product Management**: CRUD operations for products, including images and categories.
+- **Product Search**: Search products by name or description using a search endpoint.
 - **Order Management**: Place orders, manage order items, and update order status.
 - **Address Management**: Customers can manage multiple addresses.
 - **Product Ratings & Reviews**: Customers can rate and review products.
@@ -21,6 +22,7 @@ This Django REST Framework project provides a backend API for an e-commerce plat
 - `/vendor/login/` - Vendor login.
 - `/vendor/register/` - Vendor registration.
 - `/products/` - List or create products (filter by category, vendor, or id).
+- `/search/` - Search products by name or description (query param `q`).
 - `/product/<id>/` - Retrieve, update, or delete a product.
 - `/product/<id>/add_review/` - Add a review to a product.
 - `/categories/` - List or create product categories.
