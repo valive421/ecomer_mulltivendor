@@ -9,7 +9,6 @@ from django.views.decorators.csrf import csrf_exempt
 from django.contrib.auth import authenticate
 from django.contrib.auth.models import User
 from django.contrib.auth.hashers import make_password
-from django.contrib.auth.models import User
 from django.db import IntegrityError
 from django.utils.decorators import method_decorator
 from django.views.decorators.http import require_http_methods
@@ -29,77 +28,79 @@ from rest_framework.pagination import PageNumberPagination
 from .models import Product, ProductRating, Customer
 from django.db.models import Q
 
-from django.views.decorators.csrf import csrf_exempt
-
 # Vendor registration endpoint
 @csrf_exempt
 def vendorRegister(request):
-    first_name=request.POST.get('first_name')
-    last_name=request.POST.get('last_name')
-    username=request.POST.get('username')
-    email=request.POST.get('email')
-    mobile=request.POST.get('mobile')
-    password=request.POST.get('password')
-    address=request.POST.get('address')
-    profile_pic=request.FILES.get('profile_pic')
+    first_name = request.POST.get('first_name')
+    last_name = request.POST.get('last_name')
+    username = request.POST.get('username')
+    email = request.POST.get('email')
+    mobile = request.POST.get('mobile')
+    password = request.POST.get('password')
+    address = request.POST.get('address')
+    profile_pic = request.FILES.get('profile_pic')
     try:
-        user=User.objects.create(
+        user = User.objects.create(
             first_name=first_name,
             last_name=last_name,
             username=username,
             email=email,
-            password=password,
+            password=make_password(password),  # Hash password
         )
         if user:
             try:
-                #Create Vendor
-                vendor=models.Vendor.objects.create(
+                vendor = models.Vendor.objects.create(
                     user=user,
                     mobile=mobile,
                     address=address,
                     ProfilePicture=profile_pic
                 )
-                msg={
-                    'bool':True,
-                    'user':user.id,
-                    'vendor':vendor.id,
-                    'msg':'Successful registration. Procees to Login'
+                msg = {
+                    'bool': True,
+                    'user': user.id,
+                    'vendor': vendor.id,
+                    'msg': 'Successful registration. Proceed to Login'
                 }
             except IntegrityError:
-                msg={
-                    'bool':False,
-                    'user':'Phone No. already exists!!'
+                msg = {
+                    'bool': False,
+                    'user': 'Phone No. already exists!!'
                 }
         else:
-            msg={
-                'bool':False,
-                'user':'Something went wrong'
+            msg = {
+                'bool': False,
+                'user': 'Something went wrong'
             }
     except IntegrityError:
-            msg={
-                'bool':False,
-                'user':'Username already exists!!'
-            }
+        msg = {
+            'bool': False,
+            'user': 'Username already exists!!'
+        }
     return JsonResponse(msg)
 
 # Vendor login endpoint
 @csrf_exempt
 def VendorLogin(request):
-    username=request.POST.get('username')
-    password=request.POST.get('password')
-    user=authenticate(username=username,password=password)
+    username = request.POST.get('username')
+    password = request.POST.get('password')
+    user = authenticate(username=username, password=password)
     if user:
-        vendor=models.Vendor.objects.get(user=user)
-        msg={
-            'bool':True,
-            'user':user.username,            
-            'id':vendor.id,
-        }
-        print(msg)
+        try:
+            vendor = models.Vendor.objects.get(user=user)
+            msg = {
+                'bool': True,
+                'user': user.username,
+                'id': vendor.id,
+            }
+        except models.Vendor.DoesNotExist:
+            msg = {
+                'bool': False,
+                'user': 'Vendor not found'
+            }
     else:
-        msg={
-            'bool':False,
-            'user':'Invalid Login Credentials'
+        msg = {
+            'bool': False,
+            'user': 'Invalid Login Credentials'
         }
     return JsonResponse(msg)
 
@@ -158,67 +159,72 @@ class ProductDetail(generics.RetrieveUpdateDestroyAPIView):
 # Customer registration endpoint
 @csrf_exempt
 def CustomerRegister(request):
-    first_name=request.POST.get('first_name')
-    last_name=request.POST.get('last_name')
-    username=request.POST.get('username')
-    email=request.POST.get('email')
-    mobile=request.POST.get('mobile')
-    password=request.POST.get('password')
+    first_name = request.POST.get('first_name')
+    last_name = request.POST.get('last_name')
+    username = request.POST.get('username')
+    email = request.POST.get('email')
+    mobile = request.POST.get('mobile')
+    password = request.POST.get('password')
     try:
-        user=User.objects.create(
+        user = User.objects.create(
             first_name=first_name,
             last_name=last_name,
             username=username,
             email=email,
-            password=password,
+            password=make_password(password),  # Hash password
         )
         if user:
             try:
-                #Create Customer
-                customer=models.Customer.objects.create(
+                customer = models.Customer.objects.create(
                     user=user,
                     mobile=mobile
                 )
-                msg={
-                    'bool':True,
-                    'user':user.id,
-                    'customer':customer.id,
-                    'msg':'Successful registration. Procees to Login'
+                msg = {
+                    'bool': True,
+                    'user': user.id,
+                    'customer': customer.id,
+                    'msg': 'Successful registration. Proceed to Login'
                 }
             except IntegrityError:
-                msg={
-                    'bool':False,
-                    'user':'Phone No. already exists!!'
+                msg = {
+                    'bool': False,
+                    'user': 'Phone No. already exists!!'
                 }
         else:
-            msg={
-                'bool':False,
-                'user':'Something went wrong'
+            msg = {
+                'bool': False,
+                'user': 'Something went wrong'
             }
     except IntegrityError:
-            msg={
-                'bool':False,
-                'user':'Username already exists!!'
-            }
+        msg = {
+            'bool': False,
+            'user': 'Username already exists!!'
+        }
     return JsonResponse(msg)
 
 # Customer login endpoint
 @csrf_exempt
 def CustomerLogin(request):
-    username=request.POST.get('username')
-    password=request.POST.get('password')
-    user=authenticate(username=username,password=password)
+    username = request.POST.get('username')
+    password = request.POST.get('password')
+    user = authenticate(username=username, password=password)
     if user:
-        customer=models.Customer.objects.get(user=user)
-        msg={
-            'bool':True,
-            'user':user.username,            
-            'id':customer.id,
-        }
+        try:
+            customer = models.Customer.objects.get(user=user)
+            msg = {
+                'bool': True,
+                'user': user.username,
+                'id': customer.id,
+            }
+        except models.Customer.DoesNotExist:
+            msg = {
+                'bool': False,
+                'user': 'Customer not found'
+            }
     else:
-        msg={
-            'bool':False,
-            'user':'Invalid Login Credentials'
+        msg = {
+            'bool': False,
+            'user': 'Invalid Login Credentials'
         }
     return JsonResponse(msg)
 
